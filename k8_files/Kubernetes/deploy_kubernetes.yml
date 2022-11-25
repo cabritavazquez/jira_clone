@@ -1,0 +1,101 @@
+###BACKEND####
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  selector:
+    matchLabels:
+      app: jira
+      tier: backend
+      track: stable
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: jira
+        tier: backend
+        track: stable
+    spec:
+      containers:
+        - name: jira
+          image: "noloknolo/jira_server:1.1"
+          resources:
+            requests:
+              cpu: 250m
+              memory: "400Mi"
+            limits: 
+              cpu: 500m
+              memory: "600Mi"
+          ports:
+            - name: tcp
+              containerPort: 3000
+          # Validacion desactivada W.I.P
+          # livenessProbe:
+          #   httpGet:
+          #     path: "/"
+          #     port: 3000
+          #   initialDelaySeconds: 3
+          #   periodSeconds: 3
+
+---
+
+
+###FRONTEND###
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  selector:
+    matchLabels:
+      app: jira
+      tier: frontend
+      track: stable
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: jira
+        tier: frontend
+        track: stable
+    spec:
+      containers:
+        - name: client
+          image: "noloknolo/jira_client:2.0"
+          resources:
+            requests:
+              cpu: 250m
+              memory: "400Mi"
+            limits: 
+              cpu: 500m
+              memory: "600Mi"
+          livenessProbe:
+            httpGet:
+              path: "/"
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3
+
+
+##SERVICES###
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service
+spec:
+  selector:
+    app: jira
+  ports:
+  - protocol: "TCP"
+    name: front
+    port: 8080
+    targetPort: 8080
+  - protocol: TCP
+    name: back
+    port: 3000
+    targetPort: 3000
+  type: LoadBalancer
+
