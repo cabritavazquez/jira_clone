@@ -6,20 +6,21 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: jira
-      tier: backend
-      track: stable
+      app: api
   replicas: 2
   template:
     metadata:
       labels:
-        app: jira
-        tier: backend
-        track: stable
+        app: api
+
     spec:
+      hostname: api
+      subdomain: backend
       containers:
-        - name: jira
-          image: "noloknolo/jira_server:1.1"
+        - name: api
+          image: "noloknolo/jira_server:2.1"
+          #image: ${SERVER_IMAGE}
+
           resources:
             requests:
               cpu: 250m
@@ -50,20 +51,18 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: jira
-      tier: frontend
-      track: stable
+      app: client
+
   replicas: 2
   template:
     metadata:
       labels:
-        app: jira
-        tier: frontend
-        track: stable
+        app: client
     spec:
       containers:
         - name: client
-          image: "noloknolo/jira_client:2.0"
+          image: "noloknolo/jira_client:2.1"
+          #image: ${CLIENT_IMAGE}
           resources:
             requests:
               cpu: 250m
@@ -71,31 +70,45 @@ spec:
             limits: 
               cpu: 500m
               memory: "600Mi"
-          livenessProbe:
-            httpGet:
-              path: "/"
-              port: 8080
-            initialDelaySeconds: 3
-            periodSeconds: 3
+          #livenessProbe:
+           # httpGet:
+            #  path: "/"
+            #  port: 8080
+            #initialDelaySeconds: 3
+            #periodSeconds: 3
 
+---
 
 ##SERVICES###
----
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: service
+  name: front-service
 spec:
+
   selector:
-    app: jira
+    app: front
   ports:
   - protocol: "TCP"
     name: front
     port: 8080
     targetPort: 8080
-  - protocol: TCP
-    name: back
-    port: 3000
-    targetPort: 3000
   type: LoadBalancer
 
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name:  api
+spec:
+  selector:
+    app:  api
+  type:  ClusterIP
+  ports:
+  - name:  back
+    port:  3000
+    targetPort:  3000
+
+# api.default.svc.cluster.local
